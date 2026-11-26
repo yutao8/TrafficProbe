@@ -62,8 +62,9 @@ jobs:
             --distpath dist --workpath build --specpath build `
             traffic_probe.py
       - name: 冒烟测试
+        shell: bash
         run: |
-          python -c "import subprocess,sys; r=subprocess.run(['dist/TrafficProbe.exe','--help'],capture_output=True,text=True); print(r.stdout[:300]); sys.exit(r.returncode)"
+          ./dist/TrafficProbe.exe --help | head -20
       - uses: actions/upload-artifact@v4
         with:
           name: TrafficProbe-windows-x64
@@ -84,10 +85,10 @@ jobs:
       - name: 打包
         run: |
           python -m PyInstaller --onefile --console --name TrafficProbe \
-            --add-data "assets:assets" \
-            --add-data "report_html.py:." \
-            --add-data "tray.py:." \
-            --add-data "tray_win.py:." \
+            --add-data "${{ github.workspace }}/assets:assets" \
+            --add-data "${{ github.workspace }}/report_html.py:." \
+            --add-data "${{ github.workspace }}/tray.py:." \
+            --add-data "${{ github.workspace }}/tray_win.py:." \
             --distpath dist --workpath build --specpath build \
             traffic_probe.py
       - name: 冒烟测试
@@ -115,10 +116,10 @@ jobs:
       - name: 打包
         run: |
           python -m PyInstaller --onefile --console --name TrafficProbe \
-            --add-data "assets:assets" \
-            --add-data "report_html.py:." \
-            --add-data "tray.py:." \
-            --add-data "tray_win.py:." \
+            --add-data "${{ github.workspace }}/assets:assets" \
+            --add-data "${{ github.workspace }}/report_html.py:." \
+            --add-data "${{ github.workspace }}/tray.py:." \
+            --add-data "${{ github.workspace }}/tray_win.py:." \
             --distpath dist --workpath build --specpath build \
             traffic_probe.py
       - name: 冒烟测试
