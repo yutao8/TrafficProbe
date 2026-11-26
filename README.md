@@ -4,8 +4,8 @@
 
 统计 Clash / mihomo 的分流流量，查清每个程序、每个域名的用量，并找出被循环下载浪费掉的配额。
 
-[![Build](https://github.com/USERNAME/TrafficProbe/actions/workflows/build.yml/badge.svg)](https://github.com/USERNAME/TrafficProbe/actions/workflows/build.yml)
-[![Release](https://img.shields.io/github/v/release/USERNAME/TrafficProbe?color=blue)](https://github.com/USERNAME/TrafficProbe/releases)
+[![Build](https://github.com/OWNER/TrafficProbe/actions/workflows/build.yml/badge.svg)](https://github.com/OWNER/TrafficProbe/actions/workflows/build.yml)
+[![Release](https://img.shields.io/github/v/release/OWNER/TrafficProbe?color=blue)](https://github.com/OWNER/TrafficProbe/releases)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)](#安装)
 [![Python](https://img.shields.io/badge/python-3.8%2B-3776ab?logo=python&logoColor=white)](#从源码运行)
 [![License](https://img.shields.io/badge/license-MIT-green)](#许可证)
@@ -93,7 +93,7 @@ usemagpie.ai
 
 ### 直接下载
 
-从 [Releases](https://github.com/USERNAME/TrafficProbe/releases) 下载对应平台的文件，无需安装 Python。
+从 [Releases](https://github.com/OWNER/TrafficProbe/releases) 下载对应平台的文件，无需安装 Python。
 
 | 平台 | 文件 | 说明 |
 |---|---|---|
@@ -104,7 +104,7 @@ usemagpie.ai
 ### 从源码运行
 
 ```bash
-git clone https://github.com/USERNAME/TrafficProbe.git
+git clone https://github.com/OWNER/TrafficProbe.git
 cd TrafficProbe
 python traffic_probe.py
 ```
@@ -367,6 +367,32 @@ TrafficProbe/
 | push 到 main 或 PR | 语法检查、三平台构建、冒烟测试、上传 artifact |
 | 打 v 开头的标签 | 额外创建 GitHub Release，附三个平台安装包 |
 | 手动触发 | 同 PR，不发 Release |
+
+### 首次推送前
+
+README 里的徽章和克隆地址用了 `OWNER` 占位符，换成你的 GitHub 用户名或组织名：
+
+```bash
+sed -i 's/OWNER/你的用户名/g' README.md
+
+git remote add origin https://github.com/你的用户名/TrafficProbe.git
+git push -u origin main
+```
+
+推上去之后徽章会自动显示构建状态，打 `v2.1` 标签即可触发首次 Release。
+
+### 仓库红线
+
+以下内容不入库，已在 `.gitignore` 中排除：
+
+| 排除项 | 原因 |
+|---|---|
+| `TrafficProbe.exe`、`build/`、`dist/` | 构建产物，由 CI 生成 |
+| `data/`、`*.jsonl`、`report_*.html` | 录制的真实流量数据，属于使用痕迹 |
+| `traffic_probe.conf.json` | 本地 API 端口与面板密码 |
+| `*.log`、`__pycache__/` | 临时文件 |
+
+`docs/sample-report.html` 与 `docs/report-preview.png` 由 `docs/make_demo.py` 用固定随机种子生成，进程名、域名、IP 全部虚构，可安全公开。
 
 ---
 
