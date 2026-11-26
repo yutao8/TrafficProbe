@@ -12,25 +12,12 @@
 
 <br>
 
-[![Build](https://github.com/OWNER/TrafficProbe/actions/workflows/build.yml/badge.svg)](https://github.com/OWNER/TrafficProbe/actions/workflows/build.yml)
-[![Release](https://img.shields.io/github/v/release/OWNER/TrafficProbe?color=blue)](https://github.com/OWNER/TrafficProbe/releases)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)](#安装)
 [![Python](https://img.shields.io/badge/python-3.8%2B-3776ab?logo=python&logoColor=white)](#从源码运行)
 [![License](https://img.shields.io/badge/license-MIT-green)](#许可证)
+[![No Telemetry](https://img.shields.io/badge/telemetry-none-success)](#隐私说明)
 
 </div>
-
----
-
-## 这个工具解决什么问题
-
-Clash / mihomo 面板只显示**当前**连接，关掉就没有历史。Windows 自带的数据使用量只到进程级，而且把直连和代理混在一起算。
-
-结果是：月底流量超了，却不知道是哪个程序花的。
-
-TrafficProbe 通过 mihomo 的 API 持续轮询，把增量流量按「进程 + 域名 + 出口节点」记录下来，写成本地日志。除了查询，它还能自动识别**循环下载**，也就是那种每小时重复拉一个 100MB 安装包、悄悄吃掉几十 GB 配额的浪费行为。
-
-实测案例：某工具每 60 分钟重下一次 99MB 的更新包，一个月白烧 42 GB。工具靠间隔分析自动抓到了它。
 
 ---
 
@@ -38,29 +25,17 @@ TrafficProbe 通过 mihomo 的 API 持续轮询，把增量流量按「进程 + 
 
 | 能力 | 说明 |
 |---|---|
-| 五维统计 | 按进程、域名、出口节点、小时、天查询任意时间段 |
-| 循环下载检测 | 自动识别每隔固定时间重复下载同样大小的浪费行为 |
-| HTML 报告 | 单文件网页，图表用两种颜色区分代理与直连 |
-| 系统托盘 | Windows 关掉控制台也能继续录制 |
-| 跨平台 | Windows、macOS、Linux，数据统一存用户目录 |
-| 进程归因 | metadata 缺进程名时，用 TCP 表按端口反查 PID |
-
-### 和其他方案的区别
-
-| 能力 | Clash 面板 | Windows 数据使用量 | TrafficProbe |
-|---|:---:|:---:|:---:|
-| 历史记录 | 否 | 是 | 是 |
-| 到进程 | 是 | 是 | 是 |
-| 到域名 | 是 | 否 | 是 |
-| 区分代理和直连 | 是 | 否 | 是 |
-| 循环下载检测 | 否 | 否 | 是 |
-| 可导出报告 | 否 | 否 | 是 |
+| 五维统计 | 进程、域名、出口节点、小时、天，支持任意时间段 |
+| 循环下载检测 | 按事件间隔的规律性识别重复下载 |
+| HTML 报告 | 单文件，图表分代理与直连两色 |
+| 系统托盘 | Windows 关闭控制台后继续运行 |
+| 跨平台 | Windows、macOS、Linux |
+| 进程归因 | 元数据缺进程名时按本地端口反查 PID |
 
 ---
 
 ## 目录
 
-- [这个工具解决什么问题](#这个工具解决什么问题)
 - [功能](#功能)
 - [界面](#界面)
 - [安装](#安装)
@@ -77,62 +52,47 @@ TrafficProbe 通过 mihomo 的 API 持续轮询，把增量流量按「进程 + 
 
 ## 界面
 
-### 交互菜单
+交互菜单（不带参数运行即进入）、命令行输出、HTML 报告。
 
 ![交互菜单](docs/terminal-menu.png)
 
-不带参数运行即进入菜单，所有功能一个入口。
-
-### 命令行输出
-
 ![命令行输出](docs/terminal-cli.png)
 
-检测异常、按维度统计、列出浪费，三种命令的实际输出。
+![HTML 报告](docs/report-preview.png)
 
-### HTML 报告
-
-![HTML 报告预览](docs/report-preview.png)
-
-图表用两种颜色区分：蓝色为代理流量（扣机场配额），灰色为直连流量（不扣配额）。
+报告图表中，蓝色为代理流量（计入机场配额），灰色为直连流量。
 
 ---
 
 ## 安装
 
-### 直接下载
+从 [Releases](https://github.com/yutao8/TrafficProbe/releases) 下载，无需安装 Python。
 
-从 [Releases](https://github.com/OWNER/TrafficProbe/releases) 下载对应平台的文件，无需安装 Python。
+### Windows
 
-| 平台 | 文件 | 说明 |
-|---|---|---|
-| Windows x64 | `TrafficProbe.exe` | 双击运行 |
-| macOS | `TrafficProbe-macos.tar.gz` | 解压后 `chmod +x TrafficProbe` |
-| Linux | `TrafficProbe-linux.tar.gz` | 解压后 `chmod +x TrafficProbe` |
+下载 `TrafficProbe.exe`，双击运行。
+
+### macOS 与 Linux
+
+下载对应压缩包，解压后授权运行：
+
+```bash
+tar -xzf TrafficProbe-macos.tar.gz
+chmod +x TrafficProbe
+./TrafficProbe
+```
+
+macOS 首次运行若被 Gatekeeper 拦截，在「系统设置 - 隐私与安全性」中允许。
 
 ### 从源码运行
 
+只需 Python 3.8 以上，无第三方依赖：
+
 ```bash
-git clone https://github.com/OWNER/TrafficProbe.git
+git clone https://github.com/yutao8/TrafficProbe.git
 cd TrafficProbe
 python traffic_probe.py
 ```
-
-只需 Python 3.8 以上，没有任何第三方依赖。
-
-### 自行打包
-
-```bash
-pip install pyinstaller
-python -m PyInstaller --onefile --console --name TrafficProbe \
-  --icon assets/trafficprobe.ico \
-  --add-data "assets:assets" \
-  --add-data "report_html.py:." \
-  --add-data "tray.py:." \
-  --add-data "tray_win.py:." \
-  traffic_probe.py
-```
-
-Windows 下 `--add-data` 的分隔符是分号，macOS 和 Linux 是冒号。
 
 ---
 
@@ -140,55 +100,22 @@ Windows 下 `--add-data` 的分隔符是分号，macOS 和 Linux 是冒号。
 
 ### 前置条件
 
-Clash Verge 或 mihomo 的**外部控制器**必须开启，位置在设置里的外部控制器一项。
+Clash Verge 或 mihomo 需开启**外部控制器**。工具自动探测端口 9090、9097、9091、7890，可用 `c` 选项手动指定。
 
-工具会自动探测 9090、9097、9091、7890 四个端口，都不是就手动指定。
-
-### 三步上手
-
-第一步，启动录制。
+### 启动
 
 ```bash
-# Windows：双击 start.bat，自动转入托盘后台
-# macOS / Linux：
+# Windows
+start.bat
+
+# macOS / Linux
 ./start.sh
+
+# 或直接运行，前台录制
+TrafficProbe record
 ```
 
-第二步，让它跑一段时间，建议至少一天。
-
-第三步，查看结果。
-
-```bash
-TrafficProbe html --last 24h      # 生成报告并自动打开
-TrafficProbe find-repeats         # 找异常循环下载
-```
-
-### 交互菜单
-
-不带参数运行会进入菜单：
-
-```console
-======================================================================
-  流量探针 v2.1   统计 Clash / mihomo 的分流流量
-======================================================================
-  状态：已连接 http://127.0.0.1:9097（v1.19.33）
-（已有数据覆盖 2026-11-25 13:43:40 ~ 2026-11-26 09:04:35）
-  数据目录：C:\Users\me\AppData\Roaming\TrafficProbe
-----------------------------------------------------------------------
-  1) 开始录制（占住窗口，Ctrl+C 停）
-  t) 托盘后台录制（关窗口也继续跑）
-  2) 查今天
-  3) 查最近 24 小时
-  4) 查自定义时间段
-  5) 找异常循环下载，定位流量失控
-  6) 看哪些流量本该直连
-  7) 实时看当前连接
-  8) 按天对账
-  h) 生成 HTML 报告
-  9) 清理旧日志
-  c) 设置 API 端口和密码
-  0) 退出
-```
+录制持续进行，数据按天写入。运行至少一天后可查询。
 
 ### 命令速查
 
@@ -248,7 +175,7 @@ TrafficProbe span                       # 看录了哪些时间
 
 ## 隐私说明
 
-这个工具**只在你本机运行**，没有任何联网上报行为。
+全部功能在本机运行，无联网上报。
 
 | 项 | 说明 |
 |---|---|
@@ -259,15 +186,15 @@ TrafficProbe span                       # 看录了哪些时间
 | 账号 / 登录 | 不需要 |
 | 生成报告 | 纯本地 HTML 文件，不依赖任何在线服务 |
 
-代码里没有埋点、没有第三方 SDK、没有自动更新检查。全部逻辑就在 `traffic_probe.py` 和 `report_html.py` 两个文件里，可以逐行核对。
+代码集中在 `traffic_probe.py` 与 `report_html.py`，可逐行核对。
 
-只为确认这一点，可以用系统工具验证：运行期间用 `netstat -ano | findstr <PID>` 查看，只会看到指向 `127.0.0.1:909x` 的连接。
+验证方式：运行期间执行 `netstat -ano | findstr <PID>`，仅见指向 `127.0.0.1:909x` 的连接。
 
 ---
 
 ## 数据存放
 
-统一放在**用户级应用目录**，不受程序位置影响，重装不丢数据。
+数据存放在**用户级应用目录**，与程序位置无关。
 
 | 系统 | 路径 |
 |---|---|
@@ -275,7 +202,7 @@ TrafficProbe span                       # 看录了哪些时间
 | macOS | `~/Library/Application Support/TrafficProbe` |
 | Linux | `$XDG_DATA_HOME/TrafficProbe` 或 `~/.local/share/TrafficProbe` |
 
-可用环境变量 `TRAFFIC_PROBE_HOME` 覆盖，用于便携模式或测试。
+环境变量 `TRAFFIC_PROBE_HOME` 可覆盖此路径。
 
 ```
 traffic.jsonl                 录制数据，约 20MB / 天
@@ -283,7 +210,7 @@ traffic_probe.conf.json       API 端口与密码
 report_YYYYMMDD_HHMM.html     生成的报告
 ```
 
-旧版本把数据放在程序旁的 `data/` 目录，首次运行会自动迁移，并留下 `.migrated_from_portable` 标记。
+旧版数据位于程序旁的 `data/`，首次运行自动迁移，留下 `.migrated_from_portable` 标记。
 
 ---
 
@@ -299,11 +226,11 @@ mihomo API  -- 每 5 秒轮询 /connections -->  每条连接的增量字节
 
 循环下载检测的逻辑：
 
-1. 把 5 分钟内的多次采样合并成一次事件，因为一个更新包会分多片下载
+1. 5 分钟内的多次采样合并为一次事件（更新包分多片下载）
 2. 检查事件间隔是否规律：波动小于 30%，且间隔在 5 分钟至 24 小时之间
-3. 只统计 2 小时内的间隔，避免夜间休眠的长空档干扰判断
+3. 只统计 2 小时间隔，排除休眠造成的空档
 
-进程归因：mihomo 的 metadata 不总带进程名。此时用系统 TCP 表按本地端口反查 PID，再取进程名（Windows 用 `netstat -ano` 加 `tasklist`）。实测把未知进程占比从 950MB 降到 0%。
+进程归因：元数据缺进程名时，用系统 TCP 表按本地端口反查 PID 后取进程名（Windows：`netstat -ano` + `tasklist`）。
 
 ---
 
@@ -320,31 +247,31 @@ mihomo API  -- 每 5 秒轮询 /connections -->  每条连接的增量字节
 <details>
 <summary>托盘图标找不到</summary>
 
-Windows 11 默认折叠新图标。点任务栏的展开箭头，把流量探针图标拖到常显区即可。
+Windows 11 默认折叠新图标。在任务栏展开区将其拖到常显区。
 </details>
 
 <details>
 <summary>中文显示乱码</summary>
 
-程序启动时已自动切到 UTF-8 代码页。若仍乱码，先在终端执行 `chcp 65001`。
+程序启动时已切换 UTF-8 代码页。仍乱码时先执行 `chcp 65001`。
 </details>
 
 <details>
 <summary>直连流量也算流量费吗</summary>
 
-不算。只有经过代理节点的流量才扣机场配额，`DIRECT` 的流量只消耗本地宽带。报告里两者始终分开显示，避免误判。
+不算。仅经过代理节点的流量计入机场配额，`DIRECT` 只消耗本地带宽。
 </details>
 
 <details>
 <summary>日志文件太大</summary>
 
-约 20MB 每天。用 `TrafficProbe prune --keep 30` 保留最近 30 天，或直接删 `traffic.jsonl`，不影响程序运行。
+约 20MB/天。用 `TrafficProbe prune --keep 30` 保留 30 天，或删除 `traffic.jsonl`。
 </details>
 
 <details>
 <summary>macOS 或 Linux 没有托盘图标</summary>
 
-标准库没有跨平台托盘方案，`--tray` 会降级为后台常驻进程，收到 SIGTERM 时优雅退出。功能、数据、报告完全一致。
+标准库无跨平台托盘方案，`--tray` 降级为后台常驻进程，收到 SIGTERM 时退出。
 </details>
 
 ---
@@ -391,26 +318,29 @@ TrafficProbe/
 
 | 触发条件 | 行为 |
 |---|---|
-| push 到 main 或 PR | 语法检查、三平台构建、冒烟测试、上传 artifact |
+| push 到 main 或 PR | 语法检查、三平台构建、冒烟测试、上传构建产物 |
 | 打 v 开头的标签 | 额外创建 GitHub Release，附三个平台安装包 |
 | 手动触发 | 同 PR，不发 Release |
 
-### 首次推送前
+### 本地打包
 
-README 里的徽章和克隆地址用了 `OWNER` 占位符，换成你的 GitHub 用户名或组织名：
+先安装 PyInstaller：
 
 ```bash
-sed -i 's/OWNER/你的用户名/g' README.md
-
-git remote add origin https://github.com/你的用户名/TrafficProbe.git
-git push -u origin main
+python -m PyInstaller --onefile --console --name TrafficProbe \
+  --icon assets/trafficprobe.ico \
+  --add-data "assets:assets" \
+  --add-data "report_html.py:." \
+  --add-data "tray.py:." \
+  --add-data "tray_win.py:." \
+  traffic_probe.py
 ```
 
-推上去之后徽章会自动显示构建状态，打 `v2.1` 标签即可触发首次 Release。
+Windows 下 `--add-data` 的分隔符是分号，macOS 和 Linux 是冒号。
 
-### 仓库红线
+### 不入库的内容
 
-以下内容不入库，已在 `.gitignore` 中排除：
+以下内容已在 `.gitignore` 中排除：
 
 | 排除项 | 原因 |
 |---|---|
@@ -419,7 +349,7 @@ git push -u origin main
 | `traffic_probe.conf.json` | 本地 API 端口与面板密码 |
 | `*.log`、`__pycache__/` | 临时文件 |
 
-`docs/sample-report.html` 与 `docs/report-preview.png` 由 `docs/make_demo.py` 用固定随机种子生成，进程名、域名、IP 全部虚构，可安全公开。
+`docs/sample-report.html` 与 `docs/report-preview.png` 由 `docs/make_demo.py` 以固定随机种子生成，进程名、域名、IP 均为虚构。
 
 ---
 
