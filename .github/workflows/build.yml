@@ -22,7 +22,7 @@ jobs:
           python-version: "3.12"
       - name: 编译所有脚本
         run: |
-          python -m py_compile traffic_probe.py report_html.py tray.py
+          python -m py_compile traffic_probe.py report_html.py tray.py tray_win.py
           echo "语法检查通过"
       - name: 跨平台目录逻辑自检
         run: |
@@ -58,6 +58,7 @@ jobs:
             --add-data "${{ github.workspace }}\assets;assets" `
             --add-data "${{ github.workspace }}\report_html.py;." `
             --add-data "${{ github.workspace }}\tray.py;." `
+            --add-data "${{ github.workspace }}\tray_win.py;." `
             --distpath dist --workpath build --specpath build `
             traffic_probe.py
       - name: 冒烟测试
@@ -86,6 +87,7 @@ jobs:
             --add-data "assets:assets" \
             --add-data "report_html.py:." \
             --add-data "tray.py:." \
+            --add-data "tray_win.py:." \
             --distpath dist --workpath build --specpath build \
             traffic_probe.py
       - name: 冒烟测试
@@ -116,6 +118,7 @@ jobs:
             --add-data "assets:assets" \
             --add-data "report_html.py:." \
             --add-data "tray.py:." \
+            --add-data "tray_win.py:." \
             --distpath dist --workpath build --specpath build \
             traffic_probe.py
       - name: 冒烟测试

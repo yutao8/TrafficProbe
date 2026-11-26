@@ -4,6 +4,8 @@
 
 统计 Clash / mihomo 的分流流量，查清每个程序、每个域名的用量，并找出被循环下载浪费掉的配额。
 
+**完全离线运行：只读本地 Clash API，数据只写本机磁盘，不上传任何服务器。**
+
 [![Build](https://github.com/OWNER/TrafficProbe/actions/workflows/build.yml/badge.svg)](https://github.com/OWNER/TrafficProbe/actions/workflows/build.yml)
 [![Release](https://img.shields.io/github/v/release/OWNER/TrafficProbe?color=blue)](https://github.com/OWNER/TrafficProbe/releases)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)](#安装)
@@ -14,8 +16,28 @@
 
 ---
 
+## 隐私说明
+
+这个工具**只在你本机运行**，没有任何联网上报行为。
+
+| 项 | 说明 |
+|---|---|
+| 数据来源 | 仅读取 `127.0.0.1` 上的 Clash / mihomo API |
+| 数据去向 | 只写入本机用户目录（`%APPDATA%\TrafficProbe` 等） |
+| 网络请求 | 除本地回环地址外，不发起任何连接 |
+| 遥测 / 统计 | 无 |
+| 账号 / 登录 | 不需要 |
+| 生成报告 | 纯本地 HTML 文件，不依赖任何在线服务 |
+
+代码里没有埋点、没有第三方 SDK、没有自动更新检查。全部逻辑就在 `traffic_probe.py` 和 `report_html.py` 两个文件里，可以逐行核对。
+
+只为确认这一点，可以用系统工具验证：运行期间用 `netstat -ano | findstr <PID>` 查看，只会看到指向 `127.0.0.1:909x` 的连接。
+
+---
+
 ## 目录
 
+- [隐私说明](#隐私说明)
 - [这个工具解决什么问题](#这个工具解决什么问题)
 - [功能](#功能)
 - [界面](#界面)
@@ -68,24 +90,23 @@ TrafficProbe 通过 mihomo 的 API 持续轮询，把增量流量按「进程 + 
 
 ## 界面
 
+### 交互菜单
+
+![交互菜单](docs/terminal-menu.png)
+
+不带参数运行即进入菜单，所有功能一个入口。
+
+### 命令行输出
+
+![命令行输出](docs/terminal-cli.png)
+
+检测异常、按维度统计、列出浪费，三种命令的实际输出。
+
+### HTML 报告
+
 ![HTML 报告预览](docs/report-preview.png)
 
-报告中的图表：蓝色为代理流量（扣机场配额），灰色为直连流量（不扣配额）。
-
-命令行输出示例：
-
-```console
-$ TrafficProbe find-repeats --hours 24h
-======================================================================
-异常检测：2026-11-25 13:43:40 ~ 2026-11-26 08:14:43（13302 个采样点）
-======================================================================
-
-usemagpie.ai
-  触发 11 次事件（原始 47 个采样），单次约 98.8MB，累计 1.1GB
-  平均间隔 60 分钟（波动 0%，按 6 个有效间隔算）  <- 高度规律
-  判定：循环下载，折算 1.41 GB/天，约 42 GB/月
-  建议：关掉该程序的自动更新，或把域名加进直连规则
-```
+图表用两种颜色区分：蓝色为代理流量（扣机场配额），灰色为直连流量（不扣配额）。
 
 ---
 

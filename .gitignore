@@ -23,6 +23,10 @@ traytest*.jsonl
 _traytest*
 .unused/
 
+# ===== 截图中间产物 =====
+docs/terminal-preview.html
+docs/terminal-preview.png
+
 # ===== 编辑器 / 系统 =====
 .vscode/
 .idea/
