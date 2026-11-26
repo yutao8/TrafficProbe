@@ -1,0 +1,32 @@
+# ===== 构建产物 =====
+build/
+build2/
+dist/
+*.spec
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# ===== 可执行文件（由 CI 构建，不入库）=====
+TrafficProbe.exe
+
+# ===== 运行时数据（默认写在用户目录，这里防误提交）=====
+data/
+*.jsonl
+traffic_probe.conf.json
+report_*.html
+*.log
+
+# ===== 临时 / 调试文件 =====
+_block.py
+traytest*.jsonl
+_traytest*
+.unused/
+
+# ===== 编辑器 / 系统 =====
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
