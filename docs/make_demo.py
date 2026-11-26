@@ -1,110 +1,87 @@
 # -*- coding: utf-8 -*-
-"""生成一份完全合成的示例数据与报告，用于 README 展示和 CI 演示。
+"""从真实录制数据生成示例报告。
 
-所有进程名、域名、IP 都是虚构的，不含任何真实使用痕迹。
+只做最小必要脱敏：替换公司内网域名，其余（软件名、公共域名）保留原样。
 
 用法:
-    python make_demo.py                    # 生成 docs/sample-report.html
-    python make_demo.py -o other.html
+    python docs/make_demo.py
+    python docs/make_demo.py --src <jsonl> --out x.html
 """
 import argparse
 import json
 import os
-import random
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 sys.path.insert(0, ROOT)
 
-random.seed(20260101)   # 固定种子，保证每次生成一致
-
-# 虚构的进程与域名组合，括号内是"像什么"，不指向真实产品
-FAKE_APPS = [
-    ("editor.exe",        ["api.example-llm.com", "cdn.example-llm.com"],      "proxy"),
-    ("browser.exe",       ["video.example-stream.net", "news.example-site.org"], "proxy"),
-    ("browser.exe",       ["www.example-cn.com", "img.example-cdn.cn"],          "direct"),
-    ("code-helper.exe",   ["update.example-helper.io"],                          "proxy"),
-    ("sync-agent.exe",    ["sync.example-cloud.com"],                            "proxy"),
-    ("sync-agent.exe",    ["mirror.example-npm.cn"],                             "direct"),
-    ("chat-app.exe",      ["file.example-messenger.cn"],                         "direct"),
-    ("terminal.exe",      ["objects.example-repo.io"],                           "proxy"),
-    ("media-player.exe",  ["stream.example-video.net"],                          "proxy"),
-    ("editor.exe",        ["mirror.example-cn.cn"],                              "proxy"),
-    ("updater.exe",       ["mirror.example-update.io"],                          "proxy"),
-]
-
-CHAINS_PROXY = ["JP-Tokyo-01", "JP-Tokyo-03", "HK-HongKong-02"]
-CHAINS_DIRECT = ["DIRECT"]
+# 仅替换公司内网域名，其余一律保留
+HOST_MAP = {
+    "erp.ltepcb.com": "erp.example-corp.com",
+    "office.ltepcb.com": "office.example-corp.com",
+}
 
 
-def build_rows(hours=20, interval=300):
-    """生成合成采样，interval 为采样间隔（秒）。"""
-    now = datetime.now().replace(minute=0, second=0, microsecond=0)
-    end = now
-    start = end - timedelta(hours=hours)
+def load(src):
     rows = []
-    t = start
-    step = timedelta(seconds=interval)
-
-    while t <= end:
-        hour = t.hour
-        # 白天流量高，深夜低
-        busy = 1.0 if 9 <= hour <= 23 else 0.15
-        items = []
-        total = [0, 0]
-        for proc, hosts, mode in FAKE_APPS:
-            host = random.choice(hosts)
-            if random.random() > 0.35 * busy:
+    with open(src, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
                 continue
-            base = random.randint(900_000, 9_000_000) * busy
-            down = int(base)
-            # updater.exe 制造典型故障：每小时整点重下一次约 105MB 的包
-            if proc == "updater.exe":
-                if t.minute != 0:
-                    continue
-                down = 105 * 1024 * 1024 + random.randint(-1_500_000, 1_500_000)
-            up = int(down * random.uniform(0.02, 0.12))
-            chain = random.choice(CHAINS_PROXY if mode == "proxy" else CHAINS_DIRECT)
-            items.append({"p": proc, "h": host, "c": chain, "u": up, "d": down})
-            total[0] += up
-            total[1] += down
-        if items:
-            rows.append({"ts": t.strftime("%Y-%m-%d %H:%M:%S"),
-                         "up": total[0], "down": total[1], "items": items})
-        t += step
+            r = json.loads(line)
+            r["_dt"] = datetime.strptime(r["ts"], "%Y-%m-%d %H:%M:%S")
+            rows.append(r)
+    return rows
+
+
+def sanitize(rows):
+    for r in rows:
+        for it in r["items"]:
+            it["h"] = HOST_MAP.get(it["h"], it["h"])
     return rows
 
 
 def main():
-    ap = argparse.ArgumentParser(description="生成合成示例报告")
-    ap.add_argument("-o", "--out", default=os.path.join(HERE, "sample-report.html"))
+    ap = argparse.ArgumentParser(description="生成脱敏示例报告")
+    ap.add_argument("--src", default=os.path.join(
+        os.environ.get("APPDATA", ""), "TrafficProbe", "traffic.jsonl"))
+    ap.add_argument("--out", default=os.path.join(HERE, "sample-report.html"))
+    ap.add_argument("--check", action="store_true")
     a = ap.parse_args()
 
-    import report_html
-    rows = build_rows()
-    for r in rows:
-        r["_dt"] = datetime.strptime(r["ts"], "%Y-%m-%d %H:%M:%S")
+    if not os.path.exists(a.src):
+        print("找不到源数据：%s" % a.src)
+        return 1
 
-    t_from = rows[0]["_dt"]
-    t_to = rows[-1]["_dt"]
-    doc = report_html.build(rows, t_from, t_to)
+    rows = sanitize(load(a.src))
+
+    import report_html
+    doc = report_html.build(rows, rows[0]["_dt"], rows[-1]["_dt"])
+
+    # 只检查公司内网标识是否残留
+    hits = [k for k in ("ltepcb",) if k in doc.lower()]
+    if hits:
+        print("!! 内网标识残留：%s" % hits)
+        return 1
+
+    if a.check:
+        print("检查通过，未写入")
+        return 0
+
     with open(a.out, "w", encoding="utf-8") as f:
         f.write(doc)
 
-    # 统计一下，便于核对
-    import re
+    total = sum(r["up"] + r["down"] for r in rows)
     hosts = set(m["h"] for r in rows for m in r["items"])
     procs = set(m["p"] for r in rows for m in r["items"])
-    total = sum(r["up"] + r["down"] for r in rows)
+    span = (rows[-1]["_dt"] - rows[0]["_dt"]).total_seconds() / 3600
     print("已生成 %s" % a.out)
-    print("  采样点 %d，时间跨度 %.1f 小时" % (len(rows), (t_to - t_from).total_seconds() / 3600))
-    print("  进程 %d 个，域名 %d 个，总流量 %.1f GB"
+    print("  采样点 %d，跨度 %.1f 小时" % (len(rows), span))
+    print("  进程 %d 个，域名 %d 个，总流量 %.2f GB"
           % (len(procs), len(hosts), total / 1024 ** 3))
-    real = [h for h in hosts if not re.search(
-        r"example|^www\.example", h or "")]
-    print("  非示例域名（应为空）: %s" % (real or "无"))
     return 0
 
 

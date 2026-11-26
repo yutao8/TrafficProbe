@@ -1,11 +1,8 @@
 # -*- coding: utf-8 -*-
 """生成 README 用的终端截图底稿（HTML，再由浏览器截图）。
 
-所有进程名、域名均为虚构，不含真实使用痕迹。
+数值取自真实录制数据（docs/make_demo.py 生成的报告），保持一致。
 用法：python docs/make_terminal_shots.py
-
-注意：中文字符在等宽字体里占 2 个字宽，补位必须按显示宽度算，
-否则表头（上行/下行/合计）会和数字列错位。
 """
 import html
 import os
@@ -13,6 +10,7 @@ import sys
 import unicodedata
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+NL = chr(10)
 
 CSS = """
 *{margin:0;padding:0;box-sizing:border-box}
@@ -25,8 +23,8 @@ border-bottom:1px solid #30363d}
 .dot{width:11px;height:11px;border-radius:50%}
 .r{background:#ff5f57}.y{background:#febc2e}.g{background:#28c840}
 .title{margin-left:10px;color:#8b949e;font-size:12px}
-pre{padding:18px 20px;white-space:pre;overflow-x:auto;font-size:12.5px;
-line-height:1.75;font-variant-ligatures:none}
+pre{padding:16px 20px;white-space:pre;overflow-x:auto;font-size:12.5px;
+line-height:1.6;font-variant-ligatures:none}
 .dim{color:#7d8590}
 .acc{color:#58a6ff}
 .ok{color:#3fb950}
@@ -36,13 +34,12 @@ line-height:1.75;font-variant-ligatures:none}
 .sep{color:#30363d}
 """
 
-W = 130          # 分隔线宽度
-NAME_W = 34      # 名称列宽
-COL_W = 13       # 数值列宽
+W = 132
+NAME_W = 32
+COL_W = 12
 
 
 def wlen(s):
-    """按终端显示宽度计算（CJK 算 2）。"""
     n = 0
     for ch in str(s):
         n += 2 if unicodedata.east_asian_width(ch) in ("W", "F") else 1
@@ -69,28 +66,20 @@ def c(text, cls):
     return '<span class="%s">%s</span>' % (cls, esc(text))
 
 
-def cells(*pairs):
-    """pairs: (文本, 宽度, 对齐, 颜色类或 None)。返回对齐好的行。"""
-    out = []
-    for text, width, align, cls in pairs:
-        pad = ljust(text, width) if align == "l" else rjust(text, width)
-        out.append(c(pad, cls) if cls else esc(pad))
-    return "".join(out)
+def row(name, *cols, name_w=NAME_W, col_w=COL_W, name_cls=None):
+    """name 左对齐，其余各列右对齐。"""
+    parts = [c(ljust(name, name_w), name_cls) if name_cls else esc(ljust(name, name_w))]
+    for v in cols:
+        parts.append(esc(rjust(v, col_w)))
+    return "".join(parts)
 
 
-def trow(name, up, down, total, name_cls=None):
-    return cells((name, NAME_W, "l", name_cls),
-                 (up, COL_W, "r", None),
-                 (down, COL_W, "r", None),
-                 (total, COL_W, "r", None))
-
-
-MENU = "\n".join([
+MENU = NL.join([
     sep(),
     "  " + c("流量探针 v2.1", "hl") + c("   统计 Clash / mihomo 的分流流量", "dim"),
     sep(),
     "  状态：" + c("已连接 http://127.0.0.1:9090", "ok") + "（v1.19.33）",
-    c("（已有数据覆盖 2026-11-20 00:12:05 ~ 2026-11-20 20:04:35）", "dim"),
+    c("（已有数据覆盖 2026-11-25 14:00:20 ~ 2026-11-26 10:22:08）", "dim"),
     "  数据目录：" + c("%APPDATA%\\TrafficProbe", "dim"),
     sep("-"),
     "",
@@ -111,66 +100,70 @@ MENU = "\n".join([
     "  选择：",
 ])
 
-REPEATS = "\n".join([
+REPEATS = NL.join([
     sep(),
-    "异常检测：" + c("2026-11-20 00:00:12 ~ 2026-11-20 20:04:22", "hl")
-    + c("（240 个采样点）", "dim"),
+    "异常检测：" + c("2026-11-25 14:00:20 ~ 2026-11-26 10:22:08", "hl")
+    + c("（13333 个采样点）", "dim"),
     c("判定标准：同一域名单次下行 >5MB，重复出现；5 分钟内的合并为一次事件", "dim"),
     sep(),
     "",
-    c("mirror.example-update.io", "acc"),
-    "  触发 " + c("19", "hl") + " 次事件（原始 78 个采样），单次约 "
-    + c("104.2MB", "warn") + "，累计 " + c("1.94GB", "warn"),
-    "  平均间隔 " + c("60 分钟", "hl") + c("（波动 2%，按 18 个有效间隔算）", "dim")
+    c("usemagpie.ai", "acc"),
+    "  触发 " + c("11", "hl") + " 次事件，单次约 " + c("98.8MB", "warn")
+    + "，累计 " + c("1.1GB", "warn"),
+    "  平均间隔 " + c("60 分钟", "hl") + c("（波动 0%）", "dim")
     + c("   <- 高度规律", "bad"),
-    "  " + c("判定：循环下载，折算 2.33 GB/天，约 70 GB/月", "bad"),
+    "  " + c("判定：循环下载，折算 1.41 GB/天，约 42 GB/月", "bad"),
     "  " + c("建议：关掉该程序的自动更新，或把域名加进直连规则", "warn"),
     "",
-    c("mirror.example-cnpm.cn", "acc"),
-    "  触发 " + c("6", "hl") + " 次事件（原始 24 个采样），单次约 "
-    + c("28.4MB", "warn") + "，累计 " + c("170.4MB", "warn"),
-    "  平均间隔 " + c("120 分钟", "hl") + c("（波动 11%，按 5 个有效间隔算）", "dim"),
+    c("release-assets.githubusercontent.com", "acc"),
+    "  触发 " + c("5", "hl") + " 次事件，单次约 " + c("107.4MB", "warn")
+    + "，累计 " + c("537.2MB", "warn"),
+    "  平均间隔 " + c("60 分钟", "hl") + c("（波动 0%）", "dim")
+    + c("   <- 高度规律", "bad"),
     "",
     "共 2 个域名存在重复下载行为。",
 ])
 
-REPORT = "\n".join([
+REPORT = NL.join([
     sep(),
-    "时间段：2026-11-20 00:00:12  ~  2026-11-20 20:04:22",
-    "覆盖：1204 分钟，240 个采样点",
-    "走代理：↑ 312.5MB   ↓ 3.71GB   合计 " + c("4.01GB", "acc"),
-    "直连：  ↑ 88.2MB    ↓ 1.24GB   合计 " + c("1.32GB", "dim"),
-    c("代理占比：75.2%（只有这部分扣机场配额）", "warn"),
-    "代理折算：4.79 GB/天  →  " + c("144 GB/月", "bad"),
+    "时间段：2026-11-25 14:00:20  ~  2026-11-26 10:22:08",
+    "覆盖：1202 分钟，13333 个采样点",
+    "走代理：↑ 320.4MB   ↓ 3.2GB   合计 " + c("3.5GB", "acc"),
+    "直连：  ↑ 78.6MB    ↓ 1.9GB   合计 " + c("1.9GB", "dim"),
+    c("代理占比：64.9%（只有这部分扣机场配额）", "warn"),
+    "代理折算：4.22 GB/天  →  " + c("127 GB/月", "bad"),
     sep(),
     "",
     c("按进程（谁在用）", "hl"),
     sep("-"),
-    trow("", "上行", "下行", "合计"),
-    trow("editor.exe", "284.1MB", "2.94GB", "3.21GB"),
-    trow("browser.exe", "19.8MB", "612.4MB", "632.2MB"),
-    trow("sync-agent.exe", "7.2MB", "128.6MB", "135.8MB"),
-    trow("media-player.exe", "1.1MB", "24.3MB", "25.4MB"),
+    row("", "代理", "直连", "合计"),
+    row("magpie.exe", "1.7GB", "1.7MB", "1.7GB"),
+    row("language_server.exe", "580.7MB", "0.0B", "580.7MB"),
+    row("WXWork.exe", "0.0B", "486.3MB", "486.3MB"),
+    row("chrome.exe", "185.2MB", "110.4MB", "295.6MB"),
+    row("Antigravity IDE.exe", "251.4MB", "0.0B", "251.4MB"),
     "",
     c("按出口（走哪条线）", "hl"),
     sep("-"),
-    trow("", "上行", "下行", "合计"),
-    trow("JP-Tokyo-03", "271.4MB", "2.68GB", "2.94GB"),
-    trow("JP-Tokyo-01", "41.1MB", "1.03GB", "1.07GB"),
-    trow("DIRECT", "88.2MB", "1.24GB", "1.32GB", name_cls="dim"),
+    row("", "代理", "直连", "合计"),
+    row("JPN 日本 05", "2.6GB", "0.0B", "2.6GB"),
+    row("JPN 日本 03", "814.7MB", "0.0B", "814.7MB"),
+    row("JPN 日本 01", "144.3MB", "0.0B", "144.3MB"),
+    row("DIRECT", "0.0B", "1.9GB", "1.9GB", name_cls="dim"),
 ])
 
-WASTE = "\n".join([
+WASTE = NL.join([
     c("可直连却走了代理（纯浪费配额）", "warn"),
     sep("-"),
-    cells(("域名", 44, "l", None), ("类型", 14, "l", None),
-          ("", COL_W * 2 - 14, "l", None), ("合计", COL_W, "r", None)),
-    cells(("mirror.example-cnpm.cn", 44, "l", None), ("国内域名", 14, "l", None),
-          ("", COL_W * 2 - 14, "l", None), ("170.4MB", COL_W, "r", None)),
-    cells(("img.example-cdn.cn", 44, "l", None), ("国内域名", 14, "l", None),
-          ("", COL_W * 2 - 14, "l", None), ("42.1MB", COL_W, "r", None)),
+    row("域名", ljust("类型", 16), "", "流量", name_w=40, col_w=14),
+    row("release-assets.githubusercontent.com", ljust("GitHub Release", 16),
+        "", "539.8MB", name_w=40, col_w=14),
+    row("analytics.services.jetbrains.com.cn", ljust("国内域名", 16),
+        "", "19.2MB", name_w=40, col_w=14),
+    row("resources.jetbrains.com.cn", ljust("国内域名", 16),
+        "", "17.5MB", name_w=40, col_w=14),
     sep("-"),
-    "合计可省：" + c("212.5MB", "warn"),
+    "合计可省：" + c("577.2MB", "warn"),
 ])
 
 
@@ -187,7 +180,6 @@ def page(blocks):
 
 
 def main():
-    # 分开输出，README 里可以各自排版
     menu_doc = page([("TrafficProbe  --  交互菜单", MENU)])
     cli_doc = page([
         ("TrafficProbe find-repeats --hours 24h", REPEATS),
